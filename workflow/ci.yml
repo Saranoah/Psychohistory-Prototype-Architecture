@@ -1,0 +1,291 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]  # Trigger on version tags
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: "3.10"  # Default version
+  POETRY_VERSION: "1.5.1"  # For dependency management
+  PIP_CACHE_DIR: ~/.cache/pip
+  POETRY_CACHE_DIR: ~/.cache/poetry
+
+jobs:
+  lint:
+    name: Lint and Format
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.PIP_CACHE_DIR }}
+          ${{ env.POETRY_CACHE_DIR }}
+        key: ${{ runner.os }}-lint-${{ hashFiles('pyproject.toml') }}
+    
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install black==23.7.0 flake8==6.0.0 mypy==1.5.0 isort==5.12.0
+    
+    - name: Check code formatting
+      run: |
+        black --check src/ tests/ examples/ --diff
+        isort --check-only src/ tests/ examples/
+    
+    - name: Run static analysis
+      run: |
+        flake8 src/psychohistory --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/psychohistory --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        mypy src/psychohistory --strict --ignore-missing-imports
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-latest]
+        include:
+          - python-version: "3.10"
+            os: windows-latest
+          - python-version: "3.10"
+            os: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.PIP_CACHE_DIR }}
+          ${{ env.POETRY_CACHE_DIR }}
+        key: ${{ runner.os }}-test-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev,test]
+    
+    - name: Run tests
+      run: |
+        pytest tests/ \
+          --cov=src/psychohistory \
+          --cov-report=xml \
+          --cov-report=html \
+          --durations=10 \
+          -n auto \
+          --dist=loadfile
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: coverage.xml
+        flags: unittests,${{ matrix.python-version }},${{ matrix.os }}
+        fail_ci_if_error: true
+
+  security:
+    name: Security Scan
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety pip-audit
+    
+    - name: Run security scans
+      run: |
+        bandit -r src/psychohistory -f json -o bandit-report.json
+        safety check --json --output safety-report.json
+        pip-audit --format json --output pip-audit-report.json
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+          pip-audit-report.json
+
+  integration:
+    name: Integration Tests
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # Extended timeout for integration tests
+    
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[all]
+    
+    - name: Wait for services
+      run: sleep 10  # Allow services to initialize
+    
+    - name: Run integration tests
+      run: |
+        pytest tests/integration/ \
+          --cov=src/psychohistory \
+          --cov-append \
+          --cov-report=xml \
+          -v
+    
+    - name: Test CLI commands
+      run: |
+        psychohistory-analyze --version
+        psychohistory-monitor --dry-run
+        psychohistory-dashboard --help
+
+  build:
+    name: Build Package
+    needs: [test, security, integration]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build package
+      run: |
+        python -m build
+    
+    - name: Verify package
+      run: |
+        twine check dist/*
+        python -m pip install dist/*.whl --force-reinstall
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: distribution
+        path: dist/
+
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs]
+    
+    - name: Build docs
+      run: |
+        cd docs
+        make html SPHINXOPTS="-W --keep-going -n"
+    
+    - name: Check for broken links
+      run: |
+        cd docs/_build/html
+        python -m http.server 8000 &
+        sleep 5
+        linkchecker http://localhost:8000 --check-extern
+    
+    - name: Upload docs
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/_build/html/
+
+  deploy:
+    name: Deploy
+    needs: [build, docs]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: distribution
+        path: dist/
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        skip_existing: true
+        verbose: true
+    
+    - name: Deploy docs
+      if: success()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build/html
+        keep_files: true
