@@ -1,6 +1,9 @@
 # Enhanced Psychohistory Analysis Framework
 # Now with temporal analysis, cross-civilization comparison, and intervention simulation
 
+# Enhanced Psychohistory Analysis Framework
+# Now with temporal analysis, cross-civilization comparison, and intervention simulation
+
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
@@ -61,6 +64,14 @@ class CivilizationMetrics:
     def update_metric(self, category: MetricCategory, metric_name: str, value: float):
         if category in self.metrics and metric_name in self.metrics[category]:
             self.metrics[category][metric_name]['value'] = max(0.0, min(1.0, value))
+        else:
+            print(f"Warning: Unknown metric {category.value}_{metric_name}")
+    
+    def get_metric_weight(self, category: MetricCategory, metric_name: str) -> float:
+        """Safely get metric weight"""
+        if category in self.metrics and metric_name in self.metrics[category]:
+            return self.metrics[category][metric_name].get('weight', 0.2)
+        return 0.0
     
     def take_snapshot(self, snapshot_date: datetime = None):
         """Record current state with timestamp"""
@@ -126,9 +137,9 @@ class PsychohistoryEngine:
                 'name': "Economic Collapse Cycle",
                 'description': "Conditions preceding economic system failure",
                 'preconditions': {
-                    'wealth_inequality': (0.75, 1.0),
-                    'debt_to_gdp': (0.85, 1.0),
-                    'currency_stability': (0.0, 0.4)
+                    'economic_wealth_inequality': (0.75, 1.0),
+                    'economic_debt_to_gdp': (0.85, 1.0),
+                    'economic_currency_stability': (0.0, 0.4)
                 },
                 'outcome': "Currency crisis and economic breakdown",
                 'confidence': 0.78,
@@ -139,9 +150,9 @@ class PsychohistoryEngine:
                 'name': "Revolutionary Conditions",
                 'description': "Social and political precursors to revolution",
                 'preconditions': {
-                    'wealth_inequality': (0.8, 1.0),
-                    'social_mobility': (0.0, 0.3),
-                    'institutional_trust': (0.0, 0.4)
+                    'economic_wealth_inequality': (0.8, 1.0),
+                    'social_social_mobility': (0.0, 0.3),
+                    'political_institutional_trust': (0.0, 0.4)
                 },
                 'outcome': "Mass uprising or civil war",
                 'confidence': 0.72,
@@ -152,9 +163,9 @@ class PsychohistoryEngine:
                 'name': "Imperial Decline",
                 'description': "Signs of hegemonic power collapse",
                 'preconditions': {
-                    'military_spending_ratio': (0.7, 1.0),
-                    'debt_to_gdp': (0.7, 1.0),
-                    'political_stability': (0.0, 0.5)
+                    'political_military_spending_ratio': (0.7, 1.0),
+                    'economic_debt_to_gdp': (0.7, 1.0),
+                    'political_political_stability': (0.0, 0.5)
                 },
                 'outcome': "Gradual loss of global influence",
                 'confidence': 0.8,
@@ -191,10 +202,13 @@ class PsychohistoryEngine:
         
         return results
     
-    def analyze_civilization(self, civ_name: str, analysis_date: datetime):
+    def analyze_civilization(self, civ_name: str, analysis_date: datetime = None):
         """Comprehensive analysis of a civilization's state"""
         if civ_name not in self.civilizations:
             raise ValueError(f"Unknown civilization: {civ_name}")
+        
+        if analysis_date is None:
+            analysis_date = datetime.now()
         
         civ = self.civilizations[civ_name]
         metrics = civ['metrics']
@@ -207,12 +221,12 @@ class PsychohistoryEngine:
         current_state = metrics.historical_data[-1]['metrics']
         
         # Normalize metrics with weights
-        normalized = self._normalize_metrics(current_state)
+        normalized = self._normalize_metrics(current_state, metrics)
         
         # Pattern matching
         pattern_matches = []
         for pattern in self.patterns:
-            match_score = self._calculate_match(normalized, pattern)
+            match_score = self._calculate_match(normalized, pattern, metrics)
             if match_score >= pattern.confidence * 0.8:  # Slightly relaxed threshold
                 pattern_matches.append({
                     'pattern': pattern.name,
@@ -243,36 +257,51 @@ class PsychohistoryEngine:
         
         return analysis
     
-    def _normalize_metrics(self, metrics: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+    def _normalize_metrics(self, metrics: Dict[str, Dict[str, float]], 
+                          civ_metrics: CivilizationMetrics) -> Dict[str, float]:
         """Apply category weights and normalize to 0-1 scale"""
         normalized = {}
-        for category, metrics_dict in metrics.items():
+        for category_str, metrics_dict in metrics.items():
             for metric, value in metrics_dict.items():
-                normalized[f"{category}_{metric}"] = value
+                key = f"{category_str}_{metric}"
+                normalized[key] = value
         return normalized
     
-    def _calculate_match(self, metrics: Dict[str, float], pattern: HistoricalPattern) -> float:
-        """Calculate weighted pattern match score"""
+    def _calculate_match(self, metrics: Dict[str, float], pattern: HistoricalPattern, 
+                        civ_metrics: CivilizationMetrics) -> float:
+        """Calculate weighted pattern match score - FIXED VERSION"""
         total_weight = 0
         matched_weight = 0
         
-        for metric, (min_val, max_val) in pattern.preconditions.items():
-            if metric in metrics:
-                # Get category weight from metrics structure
-                category = metric.split('_')[0]
-                cat_metrics = next(
-                    m for m in self.civilizations.values()
-                )['metrics'].metrics[MetricCategory(category)]
+        for metric_key, (min_val, max_val) in pattern.preconditions.items():
+            if metric_key in metrics:
+                # Parse category and metric name correctly
+                try:
+                    category_str, metric_name = metric_key.split('_', 1)
+                    # Find the corresponding MetricCategory enum
+                    category_enum = None
+                    for cat_enum in MetricCategory:
+                        if cat_enum.value == category_str:
+                            category_enum = cat_enum
+                            break
+                    
+                    if category_enum:
+                        weight = civ_metrics.get_metric_weight(category_enum, metric_name)
+                    else:
+                        weight = 0.2  # Default weight
+                        
+                except ValueError:
+                    # If splitting fails, use default weight
+                    weight = 0.2
                 
-                weight = cat_metrics.get(metric.split('_')[1], {'weight': 0.2})['weight']
                 total_weight += weight
                 
-                if min_val <= metrics[metric] <= max_val:
+                if min_val <= metrics[metric_key] <= max_val:
                     matched_weight += weight
         
         return matched_weight / total_weight if total_weight > 0 else 0
     
-    def _calculate_risk_score(self, metrics: Dict[str, float], matches: List[Dict]]) -> float:
+    def _calculate_risk_score(self, metrics: Dict[str, float], matches: List[Dict]) -> float:
         """Calculate composite risk score (0-1)"""
         # Base score from metrics
         critical_metrics = [
@@ -282,7 +311,11 @@ class PsychohistoryEngine:
             'environmental_climate_stress'
         ]
         
-        base_score = np.mean([metrics[m] for m in critical_metrics if m in metrics])
+        available_metrics = [metrics.get(m, 0.5) for m in critical_metrics if m in metrics]
+        if available_metrics:
+            base_score = np.mean(available_metrics)
+        else:
+            base_score = 0.5  # Neutral if no metrics available
         
         # Adjust for pattern matches
         match_adjustment = 0
@@ -292,7 +325,7 @@ class PsychohistoryEngine:
         
         return min(1.0, base_score * 0.6 + match_adjustment * 0.4)
     
-    def _generate_recommendations(self, metrics: Dict[str, float], matches: List[Dict]]) -> List[str]:
+    def _generate_recommendations(self, metrics: Dict[str, float], matches: List[Dict]) -> List[str]:
         """Generate targeted recommendations"""
         recs = []
         
@@ -303,9 +336,9 @@ class PsychohistoryEngine:
             recs.append("Establish debt reduction plan with spending caps")
         
         # Political recommendations
-        if metrics.get('political_institutional_trust', 0) < 0.4:
+        if metrics.get('political_institutional_trust', 1) < 0.4:
             recs.append("Launch transparency initiatives for government institutions")
-        if metrics.get('political_corruption_index', 1) > 0.6:
+        if metrics.get('political_corruption_index', 0) > 0.6:
             recs.append("Strengthen independent anti-corruption mechanisms")
         
         # Add pattern-specific recommendations
@@ -325,6 +358,10 @@ class PsychohistoryEngine:
             raise ValueError(f"Unknown civilization: {civ_name}")
         
         civ = self.civilizations[civ_name]
+        if not civ['metrics'].historical_data:
+            # Take snapshot if none exists
+            civ['metrics'].take_snapshot()
+            
         current = civ['metrics'].historical_data[-1]['metrics']
         
         # Create projected metrics
@@ -332,16 +369,23 @@ class PsychohistoryEngine:
         
         # Apply interventions
         for metric_change, effect_size in intervention.items():
-            category, metric = metric_change.split('_', 1)
-            if category in projected and metric in projected[category]:
-                projected[category][metric] = max(0, min(1, 
-                    projected[category][metric] + effect_size))
+            try:
+                category_str, metric = metric_change.split('_', 1)
+                if category_str in projected and metric in projected[category_str]:
+                    projected[category_str][metric] = max(0, min(1, 
+                        projected[category_str][metric] + effect_size))
+            except ValueError:
+                print(f"Warning: Invalid metric format: {metric_change}")
         
         # Create temporary civilization for projection
         temp_metrics = CivilizationMetrics()
-        for cat in projected:
-            for metric, value in projected[cat].items():
-                temp_metrics.update_metric(MetricCategory(cat), metric, value)
+        for cat_str in projected:
+            for metric, value in projected[cat_str].items():
+                # Find the corresponding enum
+                for cat_enum in MetricCategory:
+                    if cat_enum.value == cat_str:
+                        temp_metrics.update_metric(cat_enum, metric, value)
+                        break
         
         temp_metrics.take_snapshot(datetime.now() + timedelta(days=365*years))
         
