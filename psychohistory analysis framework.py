@@ -1,9 +1,6 @@
 # Enhanced Psychohistory Analysis Framework
 # Now with temporal analysis, cross-civilization comparison, and intervention simulation
 
-# Enhanced Psychohistory Analysis Framework
-# Now with temporal analysis, cross-civilization comparison, and intervention simulation
-
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
@@ -277,7 +274,12 @@ class PsychohistoryEngine:
             if metric_key in metrics:
                 # Parse category and metric name correctly
                 try:
-                    category_str, metric_name = metric_key.split('_', 1)
+                    parts = metric_key.split('_')
+                    if len(parts) >= 2:
+                        category_str = parts[0]
+                        metric_name = '_'.join(parts[1:])  # Handle metrics with underscores
+                    else:
+                        raise ValueError("Invalid metric format")
                     # Find the corresponding MetricCategory enum
                     category_enum = None
                     for cat_enum in MetricCategory:
@@ -370,7 +372,13 @@ class PsychohistoryEngine:
         # Apply interventions
         for metric_change, effect_size in intervention.items():
             try:
-                category_str, metric = metric_change.split('_', 1)
+                parts = metric_change.split('_')
+                if len(parts) >= 2:
+                    category_str = parts[0]
+                    metric = '_'.join(parts[1:])  # Handle metrics with underscores
+                else:
+                    raise ValueError("Invalid format")
+                    
                 if category_str in projected and metric in projected[category_str]:
                     projected[category_str][metric] = max(0, min(1, 
                         projected[category_str][metric] + effect_size))
