@@ -1,753 +1,686 @@
-# Enhanced Real-Time Psychohistory Monitoring System v2.0
-# Now with adaptive data collection, anomaly detection, and predictive modeling
-
-import asyncio
-import aiohttp
-import json
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, AsyncGenerator
-import sqlite3
-from dataclasses import dataclass, field
-import logging
-from abc import ABC, abstractmethod
-import pytz
-from enum import Enum
-import hashlib
-import signal
-import sys
-
-# Import the psychohistory framework components directly
-# NOTE: In a real deployment, these would be in separate modules
-from enum import Enum
-import numpy as np
-from datetime import datetime
-from typing import Dict, List
-
-# Embedded psychohistory framework components
-class MetricCategory(Enum):
-    ECONOMIC = "economic"
-    SOCIAL = "social"
-    POLITICAL = "political"
-    ENVIRONMENTAL = "environmental"
-    TECHNOLOGICAL = "technological"
-
-class CivilizationMetrics:
-    """Enhanced metrics tracking with temporal dimension"""
+# =====================
+# ENHANCED COSMOLOGICAL ANALYSIS ENGINE
+# =====================
+class CosmologicalImpactAnalyzer:
+    """Analyzes the societal impact of cosmological discoveries"""
+    
+    DISCOVERY_IMPACT_FACTORS = {
+        'dark_matter_research': {
+            'physics': 1.8,
+            'technology': 1.5,
+            'philosophy': 2.0,
+            'economy': 1.2
+        },
+        'dark_energy_research': {
+            'physics': 2.0,
+            'technology': 1.7,
+            'philosophy': 2.5,
+            'economy': 1.3
+        },
+        'gravitational_wave_discoveries': {
+            'physics': 1.5,
+            'technology': 1.2,
+            'philosophy': 1.3,
+            'economy': 0.8
+        },
+        'exoplanet_discoveries': {
+            'physics': 1.2,
+            'technology': 1.6,
+            'philosophy': 1.8,
+            'economy': 1.4
+        },
+        'cosmic_ray_anomalies': {
+            'physics': 1.7,
+            'technology': 1.3,
+            'philosophy': 1.5,
+            'economy': 0.9
+        },
+        'multiverse_evidence': {
+            'physics': 2.5,
+            'technology': 1.8,
+            'philosophy': 3.0,
+            'economy': 1.2
+        }
+    }
     
     def __init__(self):
-        self.metrics = {
-            MetricCategory.ECONOMIC: {
-                'wealth_inequality': {'value': 0.5, 'weight': 0.25},
-                'currency_stability': {'value': 0.5, 'weight': 0.2},
-                'trade_volume': {'value': 0.5, 'weight': 0.15},
-                'debt_to_gdp': {'value': 0.5, 'weight': 0.25},
-                'inflation_rate': {'value': 0.5, 'weight': 0.15}
+        self.cumulative_impact = 0.0
+        self.recent_breakthroughs = []
+    
+    def analyze_discoveries(self, discoveries: List[Dict]) -> Dict:
+        """Analyze a set of cosmological discoveries"""
+        impacts = []
+        total_impact = 0.0
+        
+        for discovery in discoveries:
+            if discovery['value'] > 0.6:  # Significant discovery
+                impact = self._calculate_discovery_impact(discovery)
+                impacts.append({
+                    'discovery': discovery['subcategory'],
+                    'value': discovery['value'],
+                    'impact': impact,
+                    'societal_effects': self._get_societal_effects(discovery['metric_name'])
+                })
+                total_impact += impact
+                self.recent_breakthroughs.append(discovery)
+        
+        # Calculate cumulative impact with decay
+        self.cumulative_impact = (self.cumulative_impact * 0.9) + (total_impact * 0.5)
+        
+        return {
+            'total_impact': total_impact,
+            'cumulative_impact': self.cumulative_impact,
+            'discovery_impacts': impacts,
+            'paradigm_shift_risk': self._calculate_paradigm_shift_risk()
+        }
+    
+    def _calculate_discovery_impact(self, discovery: Dict) -> float:
+        """Calculate impact score for a discovery"""
+        base_value = discovery['value']
+        metric = discovery['metric_name']
+        
+        # Base impact factors
+        impact_factors = self.DISCOVERY_IMPACT_FACTORS.get(metric, {})
+        impact = base_value * sum(impact_factors.values()) / len(impact_factors)
+        
+        # Breakthrough multiplier
+        if base_value > 0.8:
+            impact *= 1.8  # Major breakthrough
+        elif base_value > 0.7:
+            impact *= 1.4  # Significant breakthrough
+            
+        return min(1.0, impact)
+    
+    def _get_societal_effects(self, metric_name: str) -> List[str]:
+        """Get potential societal effects of a discovery type"""
+        effects_map = {
+            'dark_matter_research': [
+                "New physics models",
+                "Advanced materials research",
+                "Philosophical debates about matter"
+            ],
+            'dark_energy_research': [
+                "Energy technology possibilities",
+                "Cosmology paradigm shifts",
+                "Religious reinterpretations"
+            ],
+            'gravitational_wave_discoveries': [
+                "New astronomy capabilities",
+                "Space-time technology concepts",
+                "Educational curriculum updates"
+            ],
+            'exoplanet_discoveries': [
+                "Increased space exploration funding",
+                "Public interest in astronomy",
+                "Philosophical questions about life"
+            ],
+            'cosmic_ray_anomalies': [
+                "New physics research directions",
+                "Radiation protection technology",
+                "Theoretical model revisions"
+            ],
+            'multiverse_evidence': [
+                "Philosophical upheaval",
+                "Religious reinterpretations",
+                "Science fiction becomes reality",
+                "Educational system challenges"
+            ]
+        }
+        return effects_map.get(metric_name, [
+            "Scientific paradigm shifts",
+            "Educational system updates",
+            "Philosophical reconsiderations"
+        ])
+    
+    def _calculate_paradigm_shift_risk(self) -> float:
+        """Calculate risk of major paradigm shift"""
+        if not self.recent_breakthroughs:
+            return 0.0
+            
+        # Count significant breakthroughs in last month
+        recent_count = sum(1 for d in self.recent_breakthroughs 
+                          if d['value'] > 0.7 and 
+                          (datetime.utcnow() - d['timestamp']).days < 30)
+        
+        # Calculate risk based on breakthrough frequency and impact
+        risk = min(1.0, recent_count * 0.2 + self.cumulative_impact * 0.5)
+        
+        # Reset breakthroughs older than 60 days
+        self.recent_breakthroughs = [
+            d for d in self.recent_breakthroughs 
+            if (datetime.utcnow() - d['timestamp']).days < 60
+        ]
+        
+        return risk
+
+# =====================
+# ENHANCED SCIENTIFIC IMPACT ANALYZER
+# =====================
+class ScientificImpactAnalyzer:
+    """Analyzes the societal impact of scientific breakthroughs"""
+    
+    FIELD_DISRUPTION_FACTORS = {
+        'physics': {
+            'technology': 2.0,
+            'economy': 1.8,
+            'social': 1.5,
+            'political': 1.2
+        },
+        'biology': {
+            'healthcare': 2.2,
+            'ethics': 1.8,
+            'social': 1.7,
+            'economy': 1.5
+        },
+        'mathematics': {
+            'technology': 1.8,
+            'security': 2.0,
+            'economy': 1.6,
+            'education': 1.4
+        },
+        'space': {
+            'economy': 2.0,
+            'geopolitics': 1.8,
+            'technology': 1.7,
+            'social': 1.4
+        }
+    }
+    
+    def __init__(self):
+        self.disruption_wave_level = 0.0
+    
+    def analyze_breakthroughs(self, breakthroughs: List[Dict]) -> Dict:
+        """Analyze a set of scientific breakthroughs"""
+        disruptions = []
+        total_disruption = 0.0
+        
+        for breakthrough in breakthroughs:
+            if breakthrough['value'] > 0.6:  # Significant breakthrough
+                disruption = self._calculate_disruption(breakthrough)
+                disruptions.append({
+                    'field': breakthrough['metric_name'],
+                    'category': breakthrough['subcategory'],
+                    'value': breakthrough['value'],
+                    'disruption': disruption,
+                    'effects': self._get_disruption_effects(breakthrough)
+                })
+                total_disruption += disruption
+        
+        # Update disruption wave level
+        self.disruption_wave_level = min(1.0, 
+            (self.disruption_wave_level * 0.85) + (total_disruption * 0.3))
+        
+        return {
+            'total_disruption': total_disruption,
+            'disruption_wave': self.disruption_wave_level,
+            'breakthrough_disruptions': disruptions,
+            'transformation_potential': self._calculate_transformation_potential()
+        }
+    
+    def _calculate_disruption(self, breakthrough: Dict) -> float:
+        """Calculate disruption score for a breakthrough"""
+        base_value = breakthrough['value']
+        field_type = breakthrough['subcategory']
+        
+        # Base disruption factors
+        disruption_factors = self.FIELD_DISRUPTION_FACTORS.get(field_type, {})
+        disruption = base_value * sum(disruption_factors.values()) / len(disruption_factors)
+        
+        # Breakthrough multiplier
+        if base_value > 0.8:
+            disruption *= 1.7  # Revolutionary breakthrough
+        elif base_value > 0.7:
+            disruption *= 1.4  # Major breakthrough
+            
+        return min(1.0, disruption)
+    
+    def _get_disruption_effects(self, breakthrough: Dict) -> List[str]:
+        """Get potential disruption effects"""
+        field = breakthrough['subcategory']
+        metric = breakthrough['metric_name']
+        
+        effects_map = {
+            'physics': {
+                'quantum_computing_progress': [
+                    "Cryptography revolution",
+                    "Drug discovery acceleration",
+                    "AI capabilities leap"
+                ],
+                'fusion_energy_progress': [
+                    "Energy industry disruption",
+                    "Geopolitical power shifts",
+                    "Environmental impact reduction"
+                ],
+                'room_temp_superconductors': [
+                    "Energy transmission revolution",
+                    "Transportation transformation",
+                    "Electronic device revolution"
+                ]
             },
-            MetricCategory.SOCIAL: {
-                'civic_engagement': {'value': 0.5, 'weight': 0.3},
-                'social_mobility': {'value': 0.5, 'weight': 0.25},
-                'population_growth': {'value': 0.5, 'weight': 0.15},
-                'urbanization_rate': {'value': 0.5, 'weight': 0.1},
-                'education_index': {'value': 0.5, 'weight': 0.2}
-            },
-            MetricCategory.POLITICAL: {
-                'institutional_trust': {'value': 0.5, 'weight': 0.3},
-                'corruption_index': {'value': 0.5, 'weight': 0.25},
-                'political_stability': {'value': 0.5, 'weight': 0.2},
-                'military_spending_ratio': {'value': 0.5, 'weight': 0.15},
-                'democratic_index': {'value': 0.5, 'weight': 0.1}
-            },
-            MetricCategory.ENVIRONMENTAL: {
-                'resource_depletion': {'value': 0.5, 'weight': 0.4},
-                'climate_stress': {'value': 0.5, 'weight': 0.3},
-                'agricultural_productivity': {'value': 0.5, 'weight': 0.2},
-                'energy_security': {'value': 0.5, 'weight': 0.1}
-            },
-            MetricCategory.TECHNOLOGICAL: {
-                'innovation_rate': {'value': 0.5, 'weight': 0.3},
-                'information_freedom': {'value': 0.5, 'weight': 0.2},
-                'digital_adoption': {'value': 0.5, 'weight': 0.2},
-                'scientific_output': {'value': 0.5, 'weight': 0.3}
+            'biology': {
+                'longevity_research': [
+                    "Healthcare system strain",
+                    "Retirement age redefinition",
+                    "Population dynamics shift"
+                ],
+                'consciousness_understanding': [
+                    "AI ethics debates",
+                    "Legal system challenges",
+                    "Philosophical reconsiderations"
+                ],
+                'genetic_engineering': [
+                    "Medical breakthroughs",
+                    "Ethical dilemmas",
+                    "Agricultural revolution"
+                ]
             }
         }
-        self.historical_data = []
-        self.current_snapshot_date = datetime.now()
-    
-    def update_metric(self, category: MetricCategory, metric_name: str, value: float):
-        if category in self.metrics and metric_name in self.metrics[category]:
-            self.metrics[category][metric_name]['value'] = max(0.0, min(1.0, value))
-    
-    def take_snapshot(self, snapshot_date: datetime = None):
-        if not snapshot_date:
-            snapshot_date = datetime.now()
         
-        snapshot = {
-            'date': snapshot_date,
-            'metrics': {cat.value: {k: v['value'] for k, v in metrics.items()} 
-                        for cat, metrics in self.metrics.items()}
-        }
-        self.historical_data.append(snapshot)
-        return snapshot
+        # Return field-specific effects if available, otherwise general effects
+        field_effects = effects_map.get(field, {})
+        specific_effects = field_effects.get(metric, [])
+        
+        if specific_effects:
+            return specific_effects
+        
+        # General effects by field
+        return {
+            'physics': [
+                "Industrial transformation",
+                "Technology paradigm shifts",
+                "New economic sectors"
+            ],
+            'biology': [
+                "Healthcare revolution",
+                "Ethical debates",
+                "Lifestyle changes"
+            ],
+            'mathematics': [
+                "Computing revolution",
+                "Security vulnerabilities",
+                "Optimization breakthroughs"
+            ],
+            'space': [
+                "New economic frontiers",
+                "Geopolitical competition",
+                "Resource availability changes"
+            ]
+        }.get(field, [
+            "Technological disruption",
+            "Economic restructuring",
+            "Social adaptation required"
+        ])
+    
+    def _calculate_transformation_potential(self) -> float:
+        """Calculate potential for societal transformation"""
+        return min(1.0, self.disruption_wave_level * 1.2)
 
-class PsychohistoryEngine:
-    """Simplified engine for monitoring system"""
+# =====================
+# UPDATED PSYCHOHISTORY ENGINE
+# =====================
+class EnhancedPsychohistoryEngine(PsychohistoryEngine):
+    """Enhanced engine with cosmological and scientific impact analysis"""
     
     def __init__(self):
-        self.civilizations = {}
-    
-    def add_civilization(self, name: str, metrics: CivilizationMetrics):
-        self.civilizations[name] = {
-            'metrics': metrics,
-            'analyses': [],
-            'risk_history': []
+        super().__init__()
+        self.cosmo_analyzer = CosmologicalImpactAnalyzer()
+        self.science_analyzer = ScientificImpactAnalyzer()
+        
+        # Update weights to include new factors
+        self.category_weights = {
+            'economic': 0.22,
+            'political': 0.22,
+            'ai_usage': 0.18,
+            'cosmological': 0.18,
+            'scientific': 0.20
         }
     
-    def analyze_civilization(self, civ_name: str, analysis_date: datetime = None):
-        if civ_name not in self.civilizations:
-            raise ValueError(f"Unknown civilization: {civ_name}")
+    def calculate_stability_score(self, hours_back: int = 24) -> float:
+        """Enhanced stability calculation with discovery impacts"""
+        stability = super().calculate_stability_score(hours_back)
         
-        if analysis_date is None:
-            analysis_date = datetime.now()
+        # Get recent discoveries
+        cosmo_data = self.db.get_category_data('cosmological', days_back=1)
+        science_data = self.db.get_category_data('scientific', days_back=1)
         
-        civ = self.civilizations[civ_name]
-        metrics = civ['metrics']
+        # Analyze impacts
+        cosmo_impact = self.cosmo_analyzer.analyze_discoveries(cosmo_data)
+        science_impact = self.science_analyzer.analyze_breakthroughs(science_data)
         
-        # Take snapshot if needed
-        if not metrics.historical_data:
-            metrics.take_snapshot(analysis_date)
+        # Adjust stability based on impacts
+        stability -= cosmo_impact.get('paradigm_shift_risk', 0) * 0.15
+        stability += science_impact.get('transformation_potential', 0) * 0.1
+        stability -= science_impact.get('disruption_wave', 0) * 0.12
         
-        # Simple risk calculation
-        current_state = metrics.historical_data[-1]['metrics']
+        return max(0.0, min(1.0, stability))
+    
+    def detect_patterns(self) -> List[Dict]:
+        """Enhanced pattern detection with discovery analysis"""
+        patterns = super().detect_patterns()
         
-        # Calculate basic stability score
-        critical_metrics = []
-        for category_data in current_state.values():
-            critical_metrics.extend(category_data.values())
+        # Add cosmological patterns
+        cosmo_data = self.db.get_category_data('cosmological', days_back=14)
+        cosmo_impact = self.cosmo_analyzer.analyze_discoveries(cosmo_data)
         
-        stability_score = np.mean(critical_metrics) if critical_metrics else 0.5
+        if cosmo_impact['total_impact'] > 0.3:
+            patterns.append({
+                'detected': True,
+                'name': 'Cosmological Paradigm Shift',
+                'significance': min(1.0, cosmo_impact['total_impact'] * 1.2),
+                'description': 'Significant cosmological discoveries challenging fundamental understanding',
+                'implications': [
+                    'Physics education overhaul needed',
+                    'Technological innovation opportunities',
+                    'Philosophical and religious reconsiderations',
+                    'Space program acceleration'
+                ]
+            })
         
-        # Determine risk level
-        if stability_score < 0.3:
+        # Add scientific disruption patterns
+        science_data = self.db.get_category_data('scientific', days_back=14)
+        science_impact = self.science_analyzer.analyze_breakthroughs(science_data)
+        
+        if science_impact['disruption_wave'] > 0.4:
+            patterns.append({
+                'detected': True,
+                'name': 'Scientific Disruption Wave',
+                'significance': min(1.0, science_impact['disruption_wave'] * 1.3),
+                'description': 'Cluster of scientific breakthroughs causing societal disruption',
+                'implications': [
+                    'Regulatory framework challenges',
+                    'Economic sector realignment',
+                    'Workforce reskilling needs',
+                    'Ethical and governance debates'
+                ]
+            })
+        
+        return patterns
+    
+    def get_dashboard_data(self) -> Dict:
+        """Enhanced dashboard data with discovery metrics"""
+        data = super().get_dashboard_data()
+        
+        # Add cosmological impact data
+        cosmo_data = self.db.get_category_data('cosmological', days_back=30)
+        data['cosmological_impact'] = self.cosmo_analyzer.analyze_discoveries(cosmo_data)
+        
+        # Add scientific disruption data
+        science_data = self.db.get_category_data('scientific', days_back=30)
+        data['scientific_disruption'] = self.science_analyzer.analyze_breakthroughs(science_data)
+        
+        # Add combined impact metric
+        data['discovery_impact_index'] = (
+            data['cosmological_impact']['cumulative_impact'] * 0.4 +
+            data['scientific_disruption']['disruption_wave'] * 0.6
+        )
+        
+        return data
+
+# =====================
+# ENHANCED WEB INTERFACE
+# =====================
+class EnhancedWebInterface(WebInterface):
+    """Web interface with discovery visualization"""
+    
+    def create_dashboard_html(self) -> str:
+        """Enhanced dashboard with discovery sections"""
+        html = super().create_dashboard_html()
+        
+        # Get discovery data
+        dashboard_data = self.engine.get_dashboard_data()
+        cosmo_impact = dashboard_data.get('cosmological_impact', {})
+        science_disruption = dashboard_data.get('scientific_disruption', {})
+        
+        # Add cosmological impact section
+        cosmo_html = self._generate_cosmological_html(cosmo_impact)
+        
+        # Add scientific disruption section
+        science_html = self._generate_scientific_html(science_disruption)
+        
+        # Insert new sections before the footer
+        insertion_point = html.find('<div class="card">\n                    <h2>📊 Data Sources</h2>')
+        if insertion_point != -1:
+            new_html = (
+                html[:insertion_point] +
+                cosmo_html +
+                science_html +
+                html[insertion_point:]
+            )
+            return new_html
+        
+        return html
+    
+    def _generate_cosmological_html(self, impact_data: Dict) -> str:
+        """Generate HTML for cosmological impact section"""
+        if not impact_data:
+            return ""
+            
+        impact_value = impact_data.get('cumulative_impact', 0)
+        risk_value = impact_data.get('paradigm_shift_risk', 0)
+        
+        # Determine impact level and color
+        if impact_value > 0.7:
+            impact_level = "REVOLUTIONARY"
+            impact_color = "#ff4444"
+        elif impact_value > 0.5:
+            impact_level = "HIGH"
+            impact_color = "#ff8800"
+        elif impact_value > 0.3:
+            impact_level = "MODERATE"
+            impact_color = "#ffaa00"
+        else:
+            impact_level = "LOW"
+            impact_color = "#88dd00"
+        
+        # Determine risk level and color
+        if risk_value > 0.6:
+            risk_level = "CRITICAL"
+            risk_color = "#ff4444"
+        elif risk_value > 0.4:
             risk_level = "HIGH"
-        elif stability_score < 0.7:
-            risk_level = "MEDIUM"
+            risk_color = "#ff8800"
+        elif risk_value > 0.2:
+            risk_level = "MODERATE"
+            risk_color = "#ffaa00"
         else:
             risk_level = "LOW"
+            risk_color = "#88dd00"
         
-        analysis = {
-            'date': analysis_date,
-            'stability_score': stability_score,
-            'risk_level': risk_level,
-            'pattern_matches': [],
-            'recommendations': []
-        }
+        # Generate discoveries HTML
+        discoveries_html = ""
+        for discovery in impact_data.get('discovery_impacts', [])[:3]:
+            discoveries_html += f"""
+            <div style="margin: 15px 0; padding: 12px; border-left: 3px solid {impact_color}; background: #f9f9f9;">
+                <h4 style="margin: 0 0 5px 0;">{discovery['discovery'].title()}</h4>
+                <p><strong>Discovery Significance:</strong> {discovery['value']:.2f}</p>
+                <p><strong>Societal Impact:</strong> {discovery['impact']:.2f}</p>
+                <details>
+                    <summary style="cursor: pointer; font-weight: bold;">Potential Effects</summary>
+                    <ul>
+                        {"".join(f"<li>{effect}</li>" for effect in discovery.get('societal_effects', []))}
+                    </ul>
+                </details>
+            </div>
+            """
         
-        civ['analyses'].append(analysis)
-        civ['risk_history'].append((analysis_date, stability_score))
-        
-        return analysis
-    
-    def predict_timeline(self, civ_name: str):
-        return {
-            'short_term': {
-                'timeframe': 'Next 1-2 years',
-                'predictions': []
-            }
-        }
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('psychohistory_monitor.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-
-class DataQuality(Enum):
-    """Quality indicators for data points"""
-    VERIFIED = 3
-    TRUSTED = 2
-    UNVERIFIED = 1
-    SUSPECT = 0
-
-@dataclass
-class DataPoint:
-    """Enhanced data point representation with quality control"""
-    source: str
-    metric: str
-    value: float
-    timestamp: datetime = field(default_factory=lambda: datetime.now(pytz.UTC))
-    confidence: float = 0.8
-    quality: DataQuality = DataQuality.UNVERIFIED
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def __post_init__(self):
-        """Validate and normalize data"""
-        self.value = max(0.0, min(1.0, float(self.value)))
-        self.confidence = max(0.0, min(1.0, float(self.confidence)))
-        if not isinstance(self.timestamp, datetime):
-            self.timestamp = datetime.fromisoformat(self.timestamp)
-        if not self.timestamp.tzinfo:
-            self.timestamp = self.timestamp.replace(tzinfo=pytz.UTC)
-    
-    @property
-    def id(self) -> str:
-        """Generate unique ID for this data point"""
-        hash_str = f"{self.source}:{self.metric}:{self.timestamp.isoformat()}"
-        return hashlib.md5(hash_str.encode()).hexdigest()
-
-class DataSource(ABC):
-    """Enhanced abstract base class for all data sources"""
-    
-    def __init__(self, name: str, update_frequency: int = 3600):
-        self.name = name
-        self.update_frequency = update_frequency  # seconds
-        self.last_update = None
-        self.is_active = True
-        self.health_score = 1.0  # 0.0-1.0 scale
-        self._consecutive_errors = 0
-        self._adaptive_interval = update_frequency
-    
-    async def adaptive_fetch(self) -> List[DataPoint]:
-        """Fetch data with adaptive error handling"""
-        try:
-            data = await self.fetch_data()
-            processed = self.process_raw_data(data)
+        return f"""
+        <div class="card">
+            <h2>🌌 Cosmological Impact Analysis</h2>
             
-            if not processed:
-                raise ValueError("No data points returned")
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+                <div class="metric-card" style="border-color: {impact_color};">
+                    <div class="metric-label" style="color: {impact_color};">Cumulative Impact</div>
+                    <div class="metric-value" style="color: {impact_color};">{impact_value:.3f}</div>
+                    <div style="color: {impact_color}; font-weight: bold;">{impact_level} IMPACT</div>
+                </div>
                 
-            # Update health metrics
-            self._consecutive_errors = 0
-            self.health_score = min(1.0, self.health_score + 0.1)
-            self.last_update = datetime.now(pytz.UTC)
+                <div class="metric-card" style="border-color: {risk_color};">
+                    <div class="metric-label" style="color: {risk_color};">Paradigm Shift Risk</div>
+                    <div class="metric-value" style="color: {risk_color};">{risk_value:.3f}</div>
+                    <div style="color: {risk_color}; font-weight: bold;">{risk_level} RISK</div>
+                </div>
+            </div>
             
-            return processed
+            <h3>Recent Significant Discoveries</h3>
+            {discoveries_html if discoveries_html else "<p>No significant recent discoveries</p>"}
+        </div>
+        """
+    
+    def _generate_scientific_html(self, disruption_data: Dict) -> str:
+        """Generate HTML for scientific disruption section"""
+        if not disruption_data:
+            return ""
             
-        except Exception as e:
-            self._consecutive_errors += 1
-            self.health_score = max(0.1, self.health_score - 0.2)
-            logger.error(f"Error in {self.name} source: {str(e)}")
-            return []
-
-    @abstractmethod
-    async def fetch_data(self) -> Any:
-        """Fetch raw data from the source"""
-        pass
-
-    @abstractmethod
-    def process_raw_data(self, raw_data: Any) -> List[DataPoint]:
-        """Convert raw data to standardized DataPoint objects"""
-        pass
-    
-    @property
-    def next_update_due(self) -> bool:
-        """Check if this source is due for an update"""
-        if not self.last_update:
-            return True
-        elapsed = (datetime.now(pytz.UTC) - self.last_update).total_seconds()
-        return elapsed >= self._adaptive_interval
-
-class APIDataSource(DataSource):
-    """Base class for API-based data sources with enhanced features"""
-    
-    def __init__(self, name: str, base_url: str, api_key: str = None):
-        super().__init__(name)
-        self.base_url = base_url
-        self.api_key = api_key
-        self.session = None
-        self._rate_limit_remaining = 100
-        self._rate_limit_reset = 0
-    
-    async def _ensure_session(self):
-        """Ensure aiohttp session exists"""
-        if not self.session:
-            self.session = aiohttp.ClientSession()
-    
-    async def fetch_data(self) -> Any:
-        """Default API fetch implementation with rate limiting"""
-        await self._ensure_session()
+        disruption_value = disruption_data.get('disruption_wave', 0)
+        transformation_value = disruption_data.get('transformation_potential', 0)
         
-        headers = {}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+        # Determine disruption level and color
+        if disruption_value > 0.7:
+            disruption_level = "EXTREME"
+            disruption_color = "#ff4444"
+        elif disruption_value > 0.5:
+            disruption_level = "HIGH"
+            disruption_color = "#ff8800"
+        elif disruption_value > 0.3:
+            disruption_level = "MODERATE"
+            disruption_color = "#ffaa00"
+        else:
+            disruption_level = "LOW"
+            disruption_color = "#88dd00"
         
-        try:
-            async with self.session.get(self.base_url, headers=headers, timeout=30) as response:
-                if response.status != 200:
-                    raise ValueError(f"API request failed: {response.status}")
-                return await response.json()
-        except Exception as e:
-            # Return mock data for demo purposes
-            return self._get_mock_data()
-    
-    def _get_mock_data(self):
-        """Return mock data when API is unavailable"""
-        return {"mock": True}
-    
-    async def close(self):
-        """Clean up resources"""
-        if self.session:
-            await self.session.close()
+        # Determine transformation level and color
+        if transformation_value > 0.7:
+            transformation_level = "REVOLUTIONARY"
+            transformation_color = "#00dd00"
+        elif transformation_value > 0.5:
+            transformation_level = "HIGH"
+            transformation_color = "#88dd00"
+        elif transformation_value > 0.3:
+            transformation_level = "MODERATE"
+            transformation_color = "#ffaa00"
+        else:
+            transformation_level = "LOW"
+            transformation_color = "#ff8800"
+        
+        # Generate breakthroughs HTML
+        breakthroughs_html = ""
+        for breakthrough in disruption_data.get('breakthrough_disruptions', [])[:3]:
+            breakthroughs_html += f"""
+            <div style="margin: 15px 0; padding: 12px; border-left: 3px solid {disruption_color}; background: #f9f9f9;">
+                <h4 style="margin: 0 0 5px 0;">{breakthrough['field'].replace('_', ' ').title()}</h4>
+                <p><strong>Breakthrough Level:</strong> {breakthrough['value']:.2f}</p>
+                <p><strong>Disruption Potential:</strong> {breakthrough['disruption']:.2f}</p>
+                <details>
+                    <summary style="cursor: pointer; font-weight: bold;">Potential Effects</summary>
+                    <ul>
+                        {"".join(f"<li>{effect}</li>" for effect in breakthrough.get('effects', []))}
+                    </ul>
+                </details>
+            </div>
+            """
+        
+        return f"""
+        <div class="card">
+            <h2>🔬 Scientific Disruption Analysis</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+                <div class="metric-card" style="border-color: {disruption_color};">
+                    <div class="metric-label" style="color: {disruption_color};">Disruption Wave</div>
+                    <div class="metric-value" style="color: {disruption_color};">{disruption_value:.3f}</div>
+                    <div style="color: {disruption_color}; font-weight: bold;">{disruption_level} DISRUPTION</div>
+                </div>
+                
+                <div class="metric-card" style="border-color: {transformation_color};">
+                    <div class="metric-label" style="color: {transformation_color};">Transformation Potential</div>
+                    <div class="metric-value" style="color: {transformation_color};">{transformation_value:.3f}</div>
+                    <div style="color: {transformation_color}; font-weight: bold;">{transformation_level} POTENTIAL</div>
+                </div>
+            </div>
+            
+            <h3>Recent High-Impact Breakthroughs</h3>
+            {breakthroughs_html if breakthroughs_html else "<p>No significant recent breakthroughs</p>"}
+        </div>
+        """
 
-class SocialMediaSentimentSource(APIDataSource):
-    """Enhanced social media sentiment analysis with anomaly detection"""
+# =====================
+# UPDATED MAIN SYSTEM
+# =====================
+class EnhancedPsychohistorySystem(PsychohistorySystem):
+    """Enhanced system with discovery analysis"""
     
     def __init__(self):
-        super().__init__(
-            name="SocialMediaSentiment",
-            base_url="https://api.social-analytics.com/v2/sentiment"
+        self.engine = EnhancedPsychohistoryEngine()
+        self.web_interface = EnhancedWebInterface(self.engine)
+        self.is_running = False
+
+# =====================
+# UPDATE MAIN FUNCTION
+# =====================
+async def main():
+    """Main entry point with enhanced system"""
+    print_banner()
+    
+    # Parse command line arguments
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Psychohistory Monitor Demo')
+    parser.add_argument('--host', default='localhost', help='Web server host (default: localhost)')
+    parser.add_argument('--port', type=int, default=5000, help='Web server port (default: 5000)')
+    parser.add_argument('--interval', type=int, default=30, help='Data collection interval in minutes (default: 30)')
+    parser.add_argument('--test', action='store_true', help='Run quick test and exit')
+    
+    args = parser.parse_args()
+    
+    # Create enhanced system
+    system = EnhancedPsychohistorySystem()
+    
+    if args.test:
+        logger.info("🧪 Running enhanced test...")
+        await system.initialize_demo_data()
+        
+        stability = system.engine.calculate_stability_score()
+        patterns = system.engine.detect_patterns()
+        
+        print(f"\n✅ Enhanced Test Results:")
+        print(f"   Stability Score: {stability:.3f}")
+        print(f"   Patterns Detected: {len(patterns)}")
+        
+        # Discovery analysis
+        cosmo_data = system.engine.db.get_category_data('cosmological', days_back=7)
+        cosmo_impact = system.engine.cosmo_analyzer.analyze_discoveries(cosmo_data)
+        print(f"   Cosmological Impact: {cosmo_impact['total_impact']:.3f}")
+        
+        science_data = system.engine.db.get_category_data('scientific', days_back=7)
+        science_impact = system.engine.science_analyzer.analyze_breakthroughs(science_data)
+        print(f"   Scientific Disruption: {science_impact['disruption_wave']:.3f}")
+        
+        print("\n🎯 Enhanced test completed successfully!")
+        return
+    
+    # Run full enhanced system
+    print(f"🚀 Starting enhanced system...")
+    print(f"   Web Interface: http://{args.host}:{args.port}")
+    print(f"   Collection Interval: {args.interval} minutes")
+    print(f"   Press Ctrl+C to stop")
+    print()
+    
+    try:
+        await system.run(
+            host=args.host, 
+            port=args.port, 
+            collection_interval=args.interval
         )
-        self.update_frequency = 1800  # 30 minutes
-        self._anomaly_threshold = 2.5  # Std devs for anomaly detection
-        
-    async def fetch_data(self) -> Any:
-        """Fetch sentiment data from API (mock implementation)"""
-        current_time = datetime.now(pytz.UTC)
-        hour_of_day = current_time.hour
-        
-        # Simulate diurnal patterns
-        base_sentiment = 0.5 + 0.2 * np.sin(hour_of_day / 24 * 2 * np.pi)
-        
-        # Simulate occasional news-driven spikes
-        news_event = np.random.choice([0, 1], p=[0.9, 0.1])
-        if news_event:
-            base_sentiment += np.random.uniform(-0.3, 0.3)
-        
-        return {
-            "timestamp": current_time.isoformat(),
-            "metrics": {
-                "institutional_trust_sentiment": max(0, min(1, base_sentiment * np.random.beta(2, 5))),
-                "economic_anxiety_level": max(0, min(1, (1 - base_sentiment) * np.random.beta(5, 3))),
-                "political_polarization_index": max(0, min(1, np.random.beta(7, 2))),
-                "social_cohesion_sentiment": max(0, min(1, base_sentiment * np.random.beta(3, 4))),
-                "future_optimism_index": max(0, min(1, base_sentiment * np.random.beta(3, 5))),
-            },
-            "metadata": {
-                "sample_size": np.random.randint(10000, 50000),
-                "platforms": ["twitter", "reddit", "facebook"]
-            }
-        }
-    
-    def process_raw_data(self, raw_data: Any) -> List[DataPoint]:
-        """Process API response with anomaly detection"""
-        if raw_data.get("mock"):
-            # Return empty for mock responses
-            return []
-            
-        data_points = []
-        current_time = datetime.now(pytz.UTC)
-        
-        for metric, value in raw_data["metrics"].items():
-            # Calculate confidence based on sample size
-            sample_size = raw_data["metadata"]["sample_size"]
-            confidence = min(0.99, 0.7 + (sample_size / 50000) * 0.3)
-            
-            data_points.append(DataPoint(
-                source=self.name,
-                metric=metric,
-                value=value,
-                timestamp=current_time,
-                confidence=confidence,
-                quality=DataQuality.TRUSTED,
-                metadata=raw_data["metadata"]
-            ))
-        
-        return data_points
+    except KeyboardInterrupt:
+        print("\n👋 Goodbye!")
+    except Exception as e:
+        logger.error(f"❌ Fatal error: {e}")
+        raise
 
-class RealTimePsychohistorySystem:
-    """Enhanced real-time monitoring system with predictive capabilities"""
-    
-    def __init__(self, db_path: str = "psychohistory_v2.db"):
-        self.db_path = db_path
-        self.psychohistory_engine = PsychohistoryEngine()
-        self.data_sources = []
-        self.is_running = False
-        self._shutdown_flag = False
-        self._monitor_task = None
-        
-        # Initialize database
-        self._init_database()
-        
-        # Setup signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self._handle_signal)
-        signal.signal(signal.SIGTERM, self._handle_signal)
-    
-    def _handle_signal(self, signum, frame):
-        """Handle shutdown signals gracefully"""
-        logger.info(f"Received shutdown signal {signum}")
-        self._shutdown_flag = True
-        if self._monitor_task:
-            self._monitor_task.cancel()
-        sys.exit(0)
-    
-    def _init_database(self):
-        """Initialize database with performance optimizations"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # Enable WAL mode for better concurrency
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=NORMAL")
-        cursor.execute("PRAGMA cache_size=-10000")  # 10MB cache
-        
-        # Create tables with indexes
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS data_points (
-                id TEXT PRIMARY KEY,
-                source TEXT NOT NULL,
-                metric TEXT NOT NULL,
-                value REAL NOT NULL,
-                timestamp DATETIME NOT NULL,
-                confidence REAL NOT NULL,
-                quality INTEGER NOT NULL,
-                metadata TEXT,
-                processed BOOLEAN DEFAULT 0
-            )
-        ''')
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS civilization_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                civilization_name TEXT NOT NULL,
-                timestamp DATETIME NOT NULL,
-                stability_score REAL NOT NULL,
-                risk_level TEXT NOT NULL,
-                analysis_data TEXT NOT NULL,
-                predictions TEXT
-            )
-        ''')
-        
-        # Create indexes
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_data_points_metric_time 
-            ON data_points (metric, timestamp DESC)
-        ''')
-        
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_snapshots_civ_time 
-            ON civilization_snapshots (civilization_name, timestamp DESC)
-        ''')
-        
-        conn.commit()
-        conn.close()
-    
-    def add_data_source(self, source: DataSource):
-        """Add a data source with health monitoring"""
-        self.data_sources.append(source)
-        logger.info(f"Added data source: {source.name} (update every {source.update_frequency}s)")
-    
-    def setup_default_sources(self):
-        """Configure all default data sources with proper initialization"""
-        self.add_data_source(SocialMediaSentimentSource())
-    
-    async def _store_data_points(self, data_points: List[DataPoint]):
-        """Efficiently store multiple data points"""
-        if not data_points:
-            return
-        
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        try:
-            # Use executemany for batch insert
-            cursor.executemany('''
-                INSERT OR REPLACE INTO data_points 
-                (id, source, metric, value, timestamp, confidence, quality, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', [
-                (dp.id, dp.source, dp.metric, dp.value, 
-                 dp.timestamp.isoformat(), dp.confidence, 
-                 dp.quality.value, json.dumps(dp.metadata))
-                for dp in data_points
-            ])
-            
-            conn.commit()
-            logger.debug(f"Stored {len(data_points)} data points")
-            
-        except Exception as e:
-            conn.rollback()
-            logger.error(f"Error storing data points: {e}")
-            raise
-        finally:
-            conn.close()
-    
-    async def collect_data(self) -> int:
-        """Collect data from all sources that are due for update"""
-        total_points = 0
-        
-        # Process each source
-        for source in self.data_sources:
-            if source.is_active and source.next_update_due:
-                try:
-                    data_points = await source.adaptive_fetch()
-                    if data_points:
-                        await self._store_data_points(data_points)
-                        total_points += len(data_points)
-                except Exception as e:
-                    logger.error(f"Error collecting from {source.name}: {e}")
-        
-        return total_points
-    
-    async def stream_data_points(self, metric_filter: str = None) -> AsyncGenerator[DataPoint, None]:
-        """Stream new data points as they arrive (for real-time dashboards)"""        
-        while not self._shutdown_flag:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            try:
-                query = '''
-                    SELECT id, source, metric, value, timestamp, confidence, quality, metadata
-                    FROM data_points
-                    WHERE processed = 0
-                    {}
-                    ORDER BY timestamp ASC
-                '''.format("AND metric = ?" if metric_filter else "")
-                
-                params = (metric_filter,) if metric_filter else ()
-                
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
-                
-                for row in rows:
-                    dp = DataPoint(
-                        source=row[1],
-                        metric=row[2],
-                        value=row[3],
-                        timestamp=datetime.fromisoformat(row[4]),
-                        confidence=row[5],
-                        quality=DataQuality(row[6]),
-                        metadata=json.loads(row[7])
-                    )
-                    
-                    # Mark as processed - FIXED SQL syntax
-                    cursor.execute(
-                        "UPDATE data_points SET processed = 1 WHERE id = ?",
-                        (row[0],)
-                    )
-                    
-                    yield dp
-                
-                conn.commit()
-                
-            except Exception as e:
-                logger.error(f"Error streaming data: {e}")
-                conn.rollback()
-            finally:
-                conn.close()
-            
-            await asyncio.sleep(1)  # Polling interval
-    
-    async def analyze_civilization(self, civilization_name: str = "Global") -> Dict:
-        """Perform comprehensive analysis with trend prediction"""
-        # Get latest metrics
-        current_metrics = await self.get_latest_metrics(civilization_name)
-        
-        # Add/update civilization in engine
-        self.psychohistory_engine.add_civilization(civilization_name, current_metrics)
-        
-        # Perform analysis
-        analysis = self.psychohistory_engine.analyze_civilization(civilization_name)
-        timeline = self.psychohistory_engine.predict_timeline(civilization_name)
-        
-        # Store snapshot
-        await self._store_snapshot(civilization_name, analysis, timeline)
-        
-        return {
-            'analysis': analysis,
-            'timeline': timeline,
-            'timestamp': datetime.now(pytz.UTC).isoformat()
-        }
-    
-    async def _store_snapshot(self, civ_name: str, analysis: Dict, timeline: Dict):
-        """Store analysis snapshot with predictive metrics"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute('''
-                INSERT INTO civilization_snapshots 
-                (civilization_name, timestamp, stability_score, risk_level, analysis_data, predictions)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                civ_name,
-                datetime.now(pytz.UTC).isoformat(),
-                analysis.get('stability_score', 0.0),
-                analysis.get('risk_level', 'UNKNOWN'),
-                json.dumps(analysis),
-                json.dumps(timeline)
-            ))
-            
-            conn.commit()
-        except Exception as e:
-            logger.error(f"Error storing snapshot: {e}")
-            conn.rollback()
-        finally:
-            conn.close()
-    
-    async def get_latest_metrics(self, civ_name: str) -> CivilizationMetrics:
-        """Get weighted average metrics from recent data - FIXED VERSION"""
-        metrics = CivilizationMetrics()
-        window_hours = 24  # Look at last 24 hours of data
-        
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        try:
-            # Get most recent data points for each metric
-            cursor.execute('''
-                SELECT metric, value, confidence, quality, timestamp
-                FROM data_points
-                WHERE timestamp > datetime('now', ?)
-                ORDER BY metric, timestamp DESC
-            ''', (f"-{window_hours} hours",))
-            
-            # Process into metric groups
-            metric_groups = {}
-            for row in cursor.fetchall():
-                metric = row[0]
-                if metric not in metric_groups:
-                    metric_groups[metric] = []
-                metric_groups[metric].append({
-                    'value': row[1],
-                    'confidence': row[2],
-                    'quality': row[3],
-                    'timestamp': row[4]
-                })
-            
-            # Apply to metrics object using FIXED mapping
-            metric_mapping = self._get_metric_mapping()
-            
-            for metric, readings in metric_groups.items():
-                if metric not in metric_mapping:
-                    continue
-                    
-                category_enum, field = metric_mapping[metric]
-                
-                # Calculate weighted average (confidence * quality)
-                total_weight = 0
-                weighted_sum = 0
-                
-                for reading in readings[:10]:  # Limit to 10 most recent readings
-                    weight = reading['confidence'] * (reading['quality'] / 3.0)
-                    weighted_sum += reading['value'] * weight
-                    total_weight += weight
-                
-                if total_weight > 0:
-                    final_value = weighted_sum / total_weight
-                    metrics.update_metric(category_enum, field, final_value)
-            
-            return metrics
-            
-        except Exception as e:
-            logger.error(f"Error fetching metrics: {e}")
-            return metrics
-        finally:
-            conn.close()
-    
-    def _get_metric_mapping(self) -> Dict[str, tuple]:
-        """Get mapping from source metrics to our framework metrics - FIXED"""
-        return {
-            # Social indicators mapped to correct structure
-            'social_cohesion_sentiment': (MetricCategory.SOCIAL, 'civic_engagement'),
-            'future_optimism_index': (MetricCategory.SOCIAL, 'social_mobility'),
-            
-            # Political indicators
-            'institutional_trust_sentiment': (MetricCategory.POLITICAL, 'institutional_trust'),
-            'political_polarization_index': (MetricCategory.POLITICAL, 'corruption_index'),
-            
-            # Economic indicators  
-            'economic_anxiety_level': (MetricCategory.ECONOMIC, 'wealth_inequality'),
-            'wealth_inequality_gini': (MetricCategory.ECONOMIC, 'wealth_inequality'),
-            'currency_volatility_index': (MetricCategory.ECONOMIC, 'currency_stability'),
-            'debt_to_gdp_ratio': (MetricCategory.ECONOMIC, 'debt_to_gdp'),
-            'inflation_rate': (MetricCategory.ECONOMIC, 'inflation_rate'),
-        }
-    
-    async def continuous_monitoring(self, civ_name: str = "Global", interval: int = 3600):
-        """Run continuous monitoring with adaptive intervals"""
-        self.is_running = True
-        self._shutdown_flag = False
-        logger.info(f"Starting continuous monitoring for {civ_name}")
-        
-        try:
-            while not self._shutdown_flag:
-                cycle_start = datetime.now(pytz.UTC)
-                
-                try:
-                    # Data collection phase
-                    collected = await self.collect_data()
-                    logger.info(f"Collected {collected} new data points")
-                    
-                    # Analysis phase
-                    results = await self.analyze_civilization(civ_name)
-                    stability = results['analysis'].get('stability_score', 0.0)
-                    risk = results['analysis'].get('risk_level', 'UNKNOWN')
-                    
-                    logger.info(
-                        f"Analysis complete - Stability: {stability:.2f}, "
-                        f"Risk: {risk}"
-                    )
-                    
-                    # Dynamic interval adjustment based on risk
-                    if risk == 'HIGH' or stability < 0.3:
-                        interval = max(300, interval // 2)  # Double frequency for high risk
-                        logger.warning(f"Increasing monitoring frequency due to high risk (new interval: {interval}s)")
-                    elif risk == 'LOW' and stability > 0.7:
-                        interval = min(86400, interval * 2)  # Reduce frequency for stable periods
-                    
-                    # Check for shutdown flag between cycles
-                    if self._shutdown_flag:
-                        break
-                        
-                    # Calculate sleep time accounting for processing duration
-                    cycle_duration = (datetime.now(pytz.UTC) - cycle_start).total_seconds()
-                    sleep_time = max(0, interval - cycle_duration)
-                    
-                    await asyncio.sleep(sleep_time)
-                    
-                except asyncio.CancelledError:
-                    logger.info("Monitoring task cancelled")
-                    break
-                except Exception as e:
-                    logger.error(f"Monitoring cycle error: {e}")
-                    await asyncio.sleep(min(60, interval))  # Wait before retrying
-                    
-        finally:
-            self.is_running = False
-            logger.info("Continuous monitoring stopped")
-
-    async def shutdown(self):
-        """Graceful system shutdown"""
-        logger.info("Initiating shutdown sequence...")
-        self._shutdown_flag = True
-        self.is_running = False
-        
-        # Cancel monitoring task if running
-        if self._monitor_task:
-            self._monitor_task.cancel()
-            try:
-                await self._monitor_task
-            except asyncio.CancelledError:
-                pass
-        
-        # Close all data source connections
-        for source in self.data_sources:
-            if hasattr(source, 'close'):
-                await source.close()
-        
-        logger.info("System shutdown complete")
-
-# Example Usage
-async def demo_system():
-    """Demonstrate the enhanced monitoring system"""
-    system = RealTimePsychohistorySystem()
-    system.setup_default_sources()
-    
-    # Start monitoring in background
-    monitor_task = asyncio.create_task(system.continuous_monitoring(interval=30))
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n👋 Shutdown complete")
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        exit(1)
