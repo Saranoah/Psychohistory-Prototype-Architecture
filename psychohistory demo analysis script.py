@@ -1,8 +1,3 @@
-
-
-```python
-#!/usr/bin/env python3
-"""
 Enhanced Psychohistory Interactive Demo
 Now with timeline visualization, shock simulation, and comparative analysis
 """
