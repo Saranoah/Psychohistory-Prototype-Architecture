@@ -1,7 +1,6 @@
 Enhanced Psychohistory Interactive Demo
 Now with timeline visualization, shock simulation, and comparative analysis
 """
-
 import sys
 import os
 import json
