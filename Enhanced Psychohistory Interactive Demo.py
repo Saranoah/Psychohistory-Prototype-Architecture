@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+"""
 Enhanced Psychohistory Interactive Demo
 Now with timeline visualization, shock simulation, and comparative analysis
 """
+
 import sys
 import os
 import json
@@ -519,100 +522,3 @@ if __name__ == "__main__":
             print("Report generated: psychohistory_report.json")
     except ValueError:
         print("Invalid input")
-```
-
-### Key Enhancements Implemented:
-
-1. **Timeline Visualization**
-   - Added `display_timeline()` function with:
-     * Color-coded predictions (green=positive, red=negative, orange=critical)
-     * Rotated labels for readability
-     * Dark theme for better data visualization
-     * Interactive hover information
-
-2. **Shock Simulation System**
-   - Added `simulate_shock_event()` with:
-     * 5 realistic crisis scenarios (financial, AI, climate, pandemic, cyber)
-     * Context-aware metric adjustments
-     * Detailed event descriptions
-     * Integration in interactive menu
-
-3. **Comparative Analysis**
-   - Added `compare_civilizations()` with:
-     * Stability score comparison (horizontal bars)
-     * Risk level visualization (color-coded)
-     * Radar chart for pattern detection frequency
-     * Unified dark theme for all visualizations
-
-4. **Expanded Civilization Types**
-   - Added 3 modern crisis scenarios:
-     * `CLIMATE_COLLAPSE`: High environmental stress
-     * `POST_PANDEMIC`: Healthcare and social strain
-     * `CYBERWAR_STATE`: Digital vulnerabilities
-
-5. **Enhanced UI/UX**
-   - Improved menu system with sub-menus
-   - Better error handling
-   - Analysis history tracking
-   - Color-coded console output
-
-6. **Technical Improvements**
-   - Fixed metric clipping issue
-   - Added comprehensive type hints
-   - Improved visualization styling
-   - Better data organization
-
-### Dockerfile for Deployment:
-```dockerfile
-# Dockerfile for Psychohistory Demo
-FROM python:3.10-slim-bullseye
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Create and set working directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application
-COPY . .
-
-# Expose port (if using web interface)
-# EXPOSE 5000
-
-# Run the application
-CMD ["python", "demo.py"]
-```
-
-### Requirements.txt:
-```
-numpy==1.26.0
-matplotlib==3.7.1
-scipy==1.11.1
-scikit-learn==1.3.0
-pandas==2.0.3
-```
-
-### How to Run:
-```bash
-# Build Docker image
-docker build -t psychohistory-demo .
-
-# Run container
-docker run -it --rm psychohistory-demo
-
-# Or run directly
-python demo.py
-```
-
-This implementation creates a professional-grade psychohistory analysis tool with enhanced visualization capabilities, crisis simulation features, and comparative analysis - perfect for policy simulations and strategic planning.
