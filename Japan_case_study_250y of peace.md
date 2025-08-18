@@ -1,4 +1,4 @@
- **Edo Period’s 250-Year Peace** as a **psychohistory case study** for your repository, blending historical analysis with quantum-inspired AGI frameworks:
+ **Edo Period’s 250-Year Peace** as a **psychohistory case study** blending historical analysis with quantum-inspired AGI frameworks:
 
 ---
 
