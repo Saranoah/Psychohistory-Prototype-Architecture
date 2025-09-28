@@ -1,97 +1,110 @@
-
+**CONTRIBUTING GUIDE**
 
 ```markdown
-# 🌌 Contributing to Psychohistory-System
+# Contributing to Psychohistory System
 
-*"History is a quantum probability landscape—your contributions collapse it into sharper focus."*
+*Systematic analysis of civilizational patterns and risks*
 
-## 🛠️ How to Contribute
+## Setup Your Environment
 
-### 1. 📥 Setup Your Environment
 ```bash
-git clone https://github.com/Saranoah/Psychohistory-System.git
-cd Psychohistory-System
-conda env create -f environment.yml  # Includes Qiskit, TensorFlow, and historical datasets
-conda activate psychohistory
+git clone https://github.com/Saranoah/Psychohistory-Prototype-Architecture.git
+cd Psychohistory-Prototype-Architecture
+pip install -e .
+pytest tests/ --cov=src/psychohistory
 ```
 
-### 2. 📌 Contribution Types
+## Contribution Types
 
-#### 🧠 **Conceptual Contributions**
-- **New Case Studies**:  
-  - Example: `quantum_rome/` analyzing Roman collapse as decoherence  
-  - Required:  
-    - Superposition state definitions  
-    - Uncertainty quantification matrices  
-    - Feedback loop diagrams (see `docs/feedback_template.md`)
+### Historical Analysis
+- **Case Studies**: Add new civilizational analyses with:
+  - Metric definitions and thresholds
+  - Pattern validation against historical outcomes
+  - Uncertainty quantification for predictions
+  - Example: `case_studies/roman_republic_analysis.py`
 
-#### 💻 **Code Contributions**
-- **Quantum Kernels**:  
-  ```python
-  class QuantumHistoryKernel(QuantumAlgorithm):
-      """Applies Grover's algorithm to historical counterfactuals"""
-      def __init__(self, n_qubits=4):
-          self.n_qubits = n_qubits  # 4 qubits = 16 historical states
-  ```
-- **Visualizations**:  
-  - Bloch sphere representations of civilizational states  
-  - Entanglement network graphs (use `networkx` + `qiskit.visualization`)
+### Code Improvements
+- **Core Modules**: Enhance pattern matching, uncertainty calculation, or metric tracking
+- **Analysis Tools**: Improve visualization, reporting, or intervention simulation
+- **Testing**: Add historical validation tests or edge case handling
 
-#### 📊 **Data Standards**
-- Historical datasets require:  
-  - `uncertainty` columns (e.g., `"roman_stability_std"`)  
-  - `entanglement` fields documenting cross-civilization links  
-  ```csv
-  year,stability_mean,stability_std,entangled_with
-  476,0.32,0.12,"Byzantium"
-  ```
-
-### 3. 🔄 Workflow
-```mermaid
-graph LR
-  A[Fork] --> B[Branch: feat/quantum-rome]
-  B --> C{Validate}
-  C -->|Pass| D[PR with #quantum #history tags]
-  C -->|Fail| E[Debug in #quantum-help]
+### Data Standards
+Historical datasets should include:
+```csv
+civilization,period,metric_category,metric_name,value,confidence,source
+Roman_Republic,100_BCE,POLITICAL,institutional_trust,0.3,0.8,Polybius_Histories
 ```
 
-### 4. 🧪 Validation Suite
-Run before PR:
-```bash
-pytest tests/  # Includes quantum state normalization checks
-python -m psychohistory.validate --case-study edo_japan
+## Workflow
+
+1. **Fork** the repository
+2. **Create branch**: `git checkout -b feature/byzantine-analysis`
+3. **Implement** with tests and documentation
+4. **Validate**: Run test suite and check against historical examples
+5. **Submit PR** with clear description of changes
+
+## Code Standards
+
+### Documentation
+```python
+def calculate_stability_score(metrics: Dict[str, float]) -> float:
+    """
+    Calculate composite stability score for a civilization.
+    
+    Args:
+        metrics: Dictionary of normalized metric values (0-1)
+        
+    Returns:
+        Stability score (0-1, where 1 is most stable)
+        
+    Historical Validation:
+        - Roman Republic (100 BCE): Expected ~0.3 
+        - Pax Romana (100 CE): Expected ~0.8
+    """
 ```
 
-### 5. 🧩 Code Conventions
-- **Quantum Variables**: Use bra-ket notation in docstrings:  
-  ```python
-  def measure_collapse(state: QuantumState) -> ProbabilisticOutcome:
-      """
-      Args:
-          |state⟩: e.g., a|Stable⟩ + b|Revolution⟩
-      """
-  ```
-- **Historical Terms**: Tag with `#psychohistory` for cross-reference:  
-  ```python
-  sankin_kotai = True  # #psychohistory #control_system
-  ```
+### Testing Requirements
+- Unit tests for all new functions
+- Historical validation against known outcomes
+- Edge case handling (missing data, extreme values)
+- Performance benchmarks for large datasets
 
-### 6. 📜 Review Process
-- **Phase 1**: Automated checks (quantum unit tests, uncertainty validation)  
-- **Phase 2**: Human review by:  
-  - 1 historian (fact-checking)  
-  - 1 quantum physicist (state logic)  
-  - 1 AI engineer (model integration)  
+## Review Process
 
-### 7. 🚀 Quickstart Contributions
-- **Beginner**: Add metadata to `datasets/byzantium.csv`  
-- **Intermediate**: Visualize Edo Japan's superposition collapse  
-- **Advanced**: Implement HHL algorithm for historical inversion problems  
+**Automated Checks:**
+- Code quality (flake8, mypy)
+- Test coverage (minimum 80%)
+- Historical validation suite
 
----
+**Human Review:**
+- Code architecture and maintainability
+- Historical accuracy and interpretation
+- Statistical methodology validation
 
-✨ **Pro Tip**: For controversial historical events (e.g., "Was the Bronze Age collapse quantum-mechanical?"), open a **Discussion Thread** tagged #quantum_debate.
+## Quick Start Ideas
 
-> *"The past isn't dead—it's in a superposition of interpretations."*
+**Beginner:**
+- Add historical examples to existing patterns
+- Improve error handling in core modules
+- Create visualization for specific civilization
+
+**Intermediate:** 
+- Implement new historical pattern from literature
+- Add uncertainty quantification for existing predictions
+- Create comparative analysis between civilizations
+
+**Advanced:**
+- Design new metric categories or calculation methods
+- Implement intervention simulation improvements
+- Build automated pattern discovery algorithms
+
+## Guidelines
+
+- **Scientific Rigor**: All claims must be supported by historical evidence
+- **Uncertainty Acknowledgment**: Always quantify and communicate prediction uncertainty  
+- **Reproducible Analysis**: Provide clear methodology and data sources
+- **Practical Focus**: Prioritize actionable insights over theoretical complexity
+
+Questions? Open an issue with the `question` label.
 ```
 
