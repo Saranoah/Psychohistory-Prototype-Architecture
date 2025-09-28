@@ -1,5 +1,8 @@
-numpy==1.26.0
-matplotlib==3.7.1
-scipy==1.11.1
-scikit-learn==1.3.0
-pandas==2.0.3
+pytest
+black
+flake8
+mypy
+isort
+bandit
+safety
+pip-audit
