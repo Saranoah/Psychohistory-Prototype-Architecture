@@ -1,8 +1,0 @@
-pytest
-black
-flake8
-mypy
-isort
-bandit
-safety
-pip-audit
