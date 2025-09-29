@@ -404,3 +404,5 @@ class PsychohistoryEngine:
             'projected_patterns': projected.pattern_matches,
             'time_horizon': years
         }
+def main():
+    print("Psychohistory Core Engine is running!")
