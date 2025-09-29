@@ -133,13 +133,16 @@ metadata = {
     "python_requires": ">=3.8",
     "install_requires": get_requirements(),
     "extras_require": extras,
+
+    # ----------- FIXED ENTRY POINTS -----------
     "entry_points": {
         "console_scripts": [
-            # adjust targets if these modules exist in your package
-            "psychohistory=psychohistory.psychohistory_analysis_framework2:main",
-            "psychohistory-demo=psychohistory.enhanced_psychohistory_interactive_demo:main",
+            # Main CLI command for psychohistory
+            "psychohistory=psychohistory.cli:cli",
         ],
     },
+    # ------------------------------------------
+
     "include_package_data": True,
     "package_data": {
         PACKAGE_NAME: [
