@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional
 from enum import Enum
 from dataclasses import dataclass, field
 import logging
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import unittest
 from copy import copy
 
-# Set up logging
+# Set up logging for production-grade observability
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # ==================== MODULE IMPLEMENTATIONS ====================
@@ -31,7 +31,14 @@ class HistoricalPattern:
     timeframe: str = "medium_term"
 
     def get_metric_weight(self, metric_key: str) -> float:
-        """Return weight for a metric in pattern matching."""
+        """Return weight for a metric in pattern matching.
+
+        Args:
+            metric_key (str): Metric identifier (e.g., 'ECONOMIC_wealth_inequality')
+
+        Returns:
+            float: Weight for the metric, defaulting to equal distribution if not specified
+        """
         weights = {
             'ECONOMIC_wealth_inequality': 0.3,
             'POLITICAL_institutional_trust': 0.25,
@@ -67,9 +74,11 @@ class PatternManager:
         ]
 
     def get_active_patterns(self) -> List[HistoricalPattern]:
+        """Return all active historical patterns."""
         return self.patterns
 
     def get_patterns_by_timeframe(self, timeframe: str) -> List[HistoricalPattern]:
+        """Return patterns matching the specified timeframe."""
         return [p for p in self.patterns if p.timeframe == timeframe]
 
 class CivilizationMetrics:
@@ -79,7 +88,14 @@ class CivilizationMetrics:
         self.metric_ranges = {cat.value: {} for cat in MetricCategory}
 
     def take_snapshot(self, date: datetime):
-        """Store a snapshot of current metrics and trends."""
+        """Store a snapshot of current metrics and trends.
+
+        Args:
+            date (datetime): Timestamp for the snapshot
+
+        Raises:
+            ValueError: If no metrics are available
+        """
         if not any(self.current_state.values()):
             raise ValueError("No metrics available for snapshot")
         self.historical_data.append({
@@ -89,7 +105,7 @@ class CivilizationMetrics:
         })
 
     def _calculate_trends(self) -> Dict:
-        """Calculate trends based on historical data."""
+        """Calculate trends based on differences between historical snapshots."""
         trends = {cat: {} for cat in self.current_state}
         if len(self.historical_data) < 2:
             return trends
@@ -105,7 +121,7 @@ class CivilizationMetrics:
         return trends
 
     def clone(self):
-        """Efficiently clone metrics."""
+        """Efficiently clone metrics without deep copying."""
         new_obj = CivilizationMetrics()
         new_obj.current_state = {cat: dict(metrics) for cat, metrics in self.current_state.items()}
         new_obj.metric_ranges = {cat: dict(ranges) for cat, ranges in self.metric_ranges.items()}
@@ -113,7 +129,18 @@ class CivilizationMetrics:
         return new_obj
 
     def update_metric(self, category: MetricCategory, metric: str, value: float, min_val: float = 0.0, max_val: float = 1.0):
-        """Update a metric with normalization and validation."""
+        """Update a metric with normalization and validation.
+
+        Args:
+            category (MetricCategory): Metric category
+            metric (str): Metric name
+            value (float): Raw metric value
+            min_val (float): Minimum value for normalization
+            max_val (float): Maximum value for normalization
+
+        Raises:
+            TypeError: If value is not numeric
+        """
         if not isinstance(value, (int, float)):
             raise TypeError(f"Metric value for {metric} must be numeric, got {type(value)}")
         normalized_value = MetricNormalizer.normalize(value, min_val, max_val)
@@ -121,11 +148,13 @@ class CivilizationMetrics:
         self.metric_ranges[category.value][metric] = (min_val, max_val)
 
     def get_metric(self, category: MetricCategory, metric: str) -> float:
+        """Retrieve a metric value."""
         return self.current_state.get(category.value, {}).get(metric, 0.0)
 
 class MetricNormalizer:
     @staticmethod
     def normalize(value: float, min_val: float, max_val: float) -> float:
+        """Normalize a value to [0,1] range."""
         if max_val == min_val:
             logging.warning(f"Min and max values are equal for normalization: {min_val}")
             return 0.5
@@ -133,11 +162,21 @@ class MetricNormalizer:
 
     @staticmethod
     def denormalize(normalized: float, min_val: float, max_val: float) -> float:
+        """Convert a normalized value back to its original range."""
         return min_val + normalized * (max_val - min_val)
 
 class UncertaintyQuantifier:
     def analyze_uncertainty(self, metrics: Dict, patterns: List[Dict], risk_score: float) -> Dict:
-        """Quantify uncertainty using Monte Carlo simulation."""
+        """Quantify uncertainty using Monte Carlo simulation.
+
+        Args:
+            metrics (Dict): Normalized metrics
+            patterns (List[Dict]): Matched patterns
+            risk_score (float): Base risk score
+
+        Returns:
+            Dict: Uncertainty analysis with confidence interval and sensitivity
+        """
         n_simulations = 1000
         simulated_scores = []
         for _ in range(n_simulations):
@@ -157,11 +196,13 @@ class UncertaintyQuantifier:
         }
 
     def _simulate_risk(self, metrics: Dict, patterns: List[Dict]) -> float:
+        """Simplified risk simulation for uncertainty analysis."""
         base_risk = np.mean([v for k, v in metrics.items() if 'inequality' in k or 'stress' in k], initial=0.5)
         pattern_risk = max((p['severity'] * p['match_score'] for p in patterns), default=0.0)
         return min(1.0, 0.6 * base_risk + 0.4 * pattern_risk)
 
     def _compute_sensitivity(self, metrics: Dict, patterns: List[Dict]) -> Dict:
+        """Compute sensitivity of risk to each metric."""
         sensitivity = {}
         baseline_risk = self._simulate_risk(metrics, patterns)
         for key in metrics:
@@ -204,15 +245,28 @@ class EngineConfig:
         ]
     }
 
+    @classmethod
+    def validate(cls):
+        """Validate configuration parameters."""
+        if abs(sum(cls.RISK_WEIGHTS.values()) - 1.0) > 1e-6:
+            raise ValueError("Risk weights must sum to 1.0")
+        if cls.MAX_PROJECTION_YEARS <= 0:
+            raise ValueError("Max projection years must be positive")
+        if not (0 < cls.PATTERN_MATCH_THRESHOLD <= 1):
+            raise ValueError("Pattern match threshold must be in (0,1]")
+        logging.info("EngineConfig validated successfully")
+
 class PredictionModel:
     @staticmethod
     def linear_projection(current: float, trend: float, years: int, decay: float = 0.7) -> float:
+        """Project metric value using linear trend with decay."""
         effective_trend = trend * (decay ** years)
         projected = current + (effective_trend * years)
         return max(0.0, min(1.0, projected))
 
     @staticmethod
     def logistic_growth(current: float, capacity: float, growth_rate: float, years: int) -> float:
+        """Logistic growth model for saturated systems."""
         if growth_rate == 0:
             return current
         exponent = -growth_rate * years
@@ -220,6 +274,7 @@ class PredictionModel:
 
     @staticmethod
     def momentum_weighted(current: float, trends: List[float], years: int) -> float:
+        """Weighted projection based on trend momentum."""
         if not trends:
             return current
         weights = np.array([0.5 ** i for i in range(len(trends))])
@@ -269,6 +324,7 @@ class PsychohistoryEngine:
     Production-ready civilizational analysis engine with accurate prediction capabilities.
     """
     def __init__(self, config_class=EngineConfig):
+        config_class.validate()
         self.pattern_manager = PatternManager()
         self.uncertainty_quantifier = UncertaintyQuantifier()
         self.civilizations = {}
@@ -280,9 +336,19 @@ class PsychohistoryEngine:
             'momentum': PredictionModel.momentum_weighted
         }
         self._normalize_cache = {}
+        self._pattern_cache = {}
 
     def add_civilization(self, name: str, metrics: CivilizationMetrics) -> None:
-        """Register a civilization with validation."""
+        """Register a civilization with validation.
+
+        Args:
+            name (str): Unique name of the civilization
+            metrics (CivilizationMetrics): Metrics object for the civilization
+
+        Raises:
+            ValueError: If name is invalid
+            TypeError: If metrics is not a CivilizationMetrics instance
+        """
         if not isinstance(name, str) or not name.strip():
             raise ValueError("Civilization name must be a non-empty string")
         if not isinstance(metrics, CivilizationMetrics):
@@ -296,7 +362,15 @@ class PsychohistoryEngine:
         logging.info(f"Added civilization: {name}")
 
     def analyze_civilization(self, civ_name: str, analysis_date: datetime = None) -> AnalysisResult:
-        """Comprehensive analysis with uncertainty quantification."""
+        """Perform comprehensive analysis with uncertainty quantification.
+
+        Args:
+            civ_name (str): Name of the civilization
+            analysis_date (datetime, optional): Date for analysis. Defaults to current time.
+
+        Returns:
+            AnalysisResult: Analysis results including risk score, patterns, and recommendations
+        """
         self._validate_civilization(civ_name)
         if analysis_date is None:
             analysis_date = datetime.now()
@@ -305,6 +379,24 @@ class PsychohistoryEngine:
         civ['analyses'].append(result)
         civ['risk_history'].append((analysis_date, result.risk_score))
         return result
+
+    def analyze_multiple_civilizations(self, civ_names: List[str], analysis_date: datetime = None) -> Dict[str, AnalysisResult]:
+        """Batch analyze multiple civilizations for performance.
+
+        Args:
+            civ_names (List[str]): List of civilization names
+            analysis_date (datetime, optional): Date for analysis. Defaults to current time.
+
+        Returns:
+            Dict[str, AnalysisResult]: Analysis results for each civilization
+        """
+        results = {}
+        for name in civ_names:
+            try:
+                results[name] = self.analyze_civilization(name, analysis_date)
+            except ValueError as e:
+                logging.error(f"Failed to analyze {name}: {e}")
+        return results
 
     def _run_analysis_logic(self, metrics: CivilizationMetrics, analysis_date: datetime) -> AnalysisResult:
         """Core analysis logic decoupled from storage."""
@@ -328,7 +420,7 @@ class PsychohistoryEngine:
         )
 
     def _prepare_metrics(self, metrics: CivilizationMetrics, analysis_date: datetime) -> CivilizationMetrics:
-        """Prepare metrics for analysis."""
+        """Prepare metrics for analysis by taking a snapshot if needed."""
         if (not metrics.historical_data or 
             (analysis_date - metrics.historical_data[-1]['date']) >= self.temporal_resolution):
             metrics.take_snapshot(analysis_date)
@@ -337,7 +429,16 @@ class PsychohistoryEngine:
         return metrics
 
     def predict_timeline(self, civ_name: str, years: int = 5, include_interventions: List[Dict] = None) -> List[TimelinePrediction]:
-        """Accurate multi-year prediction with trend propagation and intervention modeling."""
+        """Generate multi-year predictions with trend propagation and intervention modeling.
+
+        Args:
+            civ_name (str): Civilization name
+            years (int): Number of years to project
+            include_interventions (List[Dict], optional): List of interventions to apply
+
+        Returns:
+            List[TimelinePrediction]: Predicted timeline with risk scores and events
+        """
         self._validate_civilization(civ_name)
         if years > self.config.MAX_PROJECTION_YEARS:
             raise ValueError(f"Cannot project more than {self.config.MAX_PROJECTION_YEARS} years")
@@ -368,11 +469,12 @@ class PsychohistoryEngine:
         return timeline
 
     def _project_metrics_forward(self, metrics: CivilizationMetrics, years: int) -> CivilizationMetrics:
-        """Project all metrics forward using appropriate models."""
+        """Project all metrics forward using vectorized operations."""
         projected_metrics = metrics.clone()
         current_state = projected_metrics.historical_data[-1]['metrics'] if projected_metrics.historical_data else projected_metrics.current_state
         current_trends = projected_metrics.historical_data[-1].get('trends', {}) if projected_metrics.historical_data else {}
 
+        # Vectorize metric projections
         keys, values, trends = [], [], []
         for category, metric_dict in current_state.items():
             for metric_name, value in metric_dict.items():
@@ -384,6 +486,7 @@ class PsychohistoryEngine:
         trends = np.array(trends)
         projected_values = np.zeros_like(values)
 
+        # Apply appropriate prediction model for each metric
         for i, (category, metric_name) in enumerate(keys):
             if 'growth' in metric_name.lower() or 'adoption' in metric_name.lower():
                 projected_values[i] = self.prediction_models['logistic'](
@@ -399,6 +502,7 @@ class PsychohistoryEngine:
                     values[i], trends[i], years, self.config.TREND_DECAY_RATE
                 )
 
+        # Update projected metrics
         for (category, metric_name), value in zip(keys, projected_values):
             projected_metrics.update_metric(MetricCategory[category.upper()], metric_name, value)
 
@@ -407,6 +511,7 @@ class PsychohistoryEngine:
         return projected_metrics
 
     def _get_historical_trends(self, metrics: CivilizationMetrics, metric_key: str) -> List[float]:
+        """Extract historical trends for a specific metric."""
         trends = []
         if len(metrics.historical_data) < 2:
             return trends
@@ -418,13 +523,23 @@ class PsychohistoryEngine:
         return trends
 
     def _get_metric_value(self, state: Dict, metric_key: str) -> Optional[float]:
+        """Extract metric value from nested state structure."""
         if '_' in metric_key:
             category, metric_name = metric_key.split('_', 1)
             return state.get(category, {}).get(metric_name)
         return None
 
     def simulate_intervention(self, civ_name: str, intervention: Dict[str, float], years: int = 5) -> InterventionResult:
-        """Realistic intervention simulation with diminishing returns and side effects."""
+        """Simulate intervention with diminishing returns and side effects.
+
+        Args:
+            civ_name (str): Civilization name
+            intervention (Dict[str, float]): Metric changes (e.g., {'ECONOMIC_wealth_inequality': -0.2})
+            years (int): Projection horizon
+
+        Returns:
+            InterventionResult: Results including risk change and effectiveness
+        """
         self._validate_civilization(civ_name)
         baseline_analysis = self.analyze_civilization(civ_name)
         base_metrics = self.civilizations[civ_name]['metrics'].clone()
@@ -447,6 +562,7 @@ class PsychohistoryEngine:
         )
 
     def _apply_intervention_effects(self, metrics: CivilizationMetrics, intervention: Dict[str, float]) -> CivilizationMetrics:
+        """Apply intervention effects with diminishing returns and side effects."""
         intervened_metrics = metrics.clone()
         for intervention_key, effect in intervention.items():
             if '_' not in intervention_key:
@@ -459,6 +575,7 @@ class PsychohistoryEngine:
                 if current_value is None:
                     logging.warning(f"Metric {intervention_key} not found")
                     continue
+                # Apply diminishing returns
                 diminishing_factor = 1 - (abs(effect) * self.config.INTERVENTION_DIMINISHING_RETURNS)
                 adjusted_effect = effect * diminishing_factor
                 if abs(adjusted_effect) < self.config.MIN_INTERVENTION_EFFECT and effect != 0:
@@ -472,6 +589,7 @@ class PsychohistoryEngine:
         return intervened_metrics
 
     def _apply_side_effects(self, metrics: CivilizationMetrics, category: MetricCategory, metric_name: str, primary_effect: float):
+        """Apply side effects to related metrics based on configuration rules."""
         key = (category.name, metric_name)
         rules = self.config.SIDE_EFFECT_RULES.get(key, [])
         for eff_category, eff_metric, multiplier in rules:
@@ -484,6 +602,7 @@ class PsychohistoryEngine:
                 logging.warning(f"Side effect metric {eff_category}_{eff_metric} not found")
 
     def _apply_interventions(self, metrics: CivilizationMetrics, interventions: List[Dict], years_elapsed: int) -> CivilizationMetrics:
+        """Apply multiple interventions with temporal effects."""
         intervened_metrics = metrics.clone()
         for intervention in interventions:
             start_year = intervention.get('start_year', 0)
@@ -496,16 +615,19 @@ class PsychohistoryEngine:
         return intervened_metrics
 
     def _calculate_success_probability(self, intervention: Dict, current_risk: float) -> float:
+        """Calculate intervention success probability based on magnitude and context."""
         total_magnitude = sum(abs(v) for v in intervention.values())
         risk_factor = 1.0 - (current_risk * 0.5)
         base_prob = min(0.9, total_magnitude * 2.0)
         return max(0.1, base_prob * risk_factor)
 
     def _calculate_cost_benefit(self, intervention: Dict, effectiveness: float) -> float:
+        """Calculate cost-benefit ratio of intervention."""
         total_cost = sum(abs(v) for v in intervention.values())
         return float('inf') if total_cost == 0 else effectiveness / total_cost
 
     def _generate_year_predictions(self, analysis: AnalysisResult, year: int) -> List[Dict]:
+        """Generate specific predictions for a given year."""
         predictions = []
         confidence_decay = max(0.1, 1.0 - (year * 0.08))
         for match in analysis.pattern_matches[:3]:
@@ -535,6 +657,7 @@ class PsychohistoryEngine:
         return predictions
 
     def _predict_key_events(self, analysis: AnalysisResult, year: int) -> List[Dict]:
+        """Predict key events based on patterns and metrics."""
         events = []
         for pattern in analysis.pattern_matches:
             if pattern['match_score'] > 0.7:
@@ -562,6 +685,7 @@ class PsychohistoryEngine:
         return events
 
     def _identify_risk_triggers(self, analysis: AnalysisResult) -> List[str]:
+        """Identify metrics contributing most to high risk."""
         critical_metrics = []
         for metric, value in analysis.metric_snapshot.items():
             if ('inequality' in metric or 'stress' in metric) and value > 0.7:
@@ -571,6 +695,7 @@ class PsychohistoryEngine:
         return critical_metrics
 
     def _identify_stability_factors(self, analysis: AnalysisResult) -> List[str]:
+        """Identify metrics contributing to stability."""
         stability_metrics = []
         for metric, value in analysis.metric_snapshot.items():
             if ('stability' in metric or 'growth' in metric) and value > 0.6:
@@ -580,11 +705,13 @@ class PsychohistoryEngine:
         return stability_metrics
 
     def _validate_civilization(self, civ_name: str) -> None:
+        """Validate civilization exists."""
         if civ_name not in self.civilizations:
             logging.error(f"Unknown civilization: {civ_name}")
             raise ValueError(f"Unknown civilization: {civ_name}")
 
     def _normalize_metrics(self, values: Dict, trends: Dict) -> Dict:
+        """Normalize metrics with caching for performance."""
         cache_key = str(hash(str(values) + str(trends)))
         if cache_key in self._normalize_cache:
             return self._normalize_cache[cache_key]
@@ -598,6 +725,7 @@ class PsychohistoryEngine:
                     trend = float(trends.get(category, {}).get(metric, 0.0))
                     normalized['values'][key] = value
                     normalized['trends'][key] = trend
+                    # Weighted projection of current and trend-based values
                     projected = (value * c_w) + ((value + trend) * p_w)
                     normalized['projected'][key] = max(0.0, min(1.0, projected))
                 except (TypeError, ValueError) as e:
@@ -607,6 +735,7 @@ class PsychohistoryEngine:
         return normalized
 
     def _match_patterns(self, metrics: Dict) -> List[Dict]:
+        """Match current state against historical patterns with caching."""
         matches = []
         for pattern in self.pattern_manager.get_active_patterns():
             match_score = self._calculate_pattern_match(metrics, pattern)
@@ -623,10 +752,25 @@ class PsychohistoryEngine:
         return matches
 
     def _calculate_pattern_match(self, metrics: Dict, pattern: HistoricalPattern) -> float:
+        """Calculate pattern match score with caching.
+
+        Args:
+            metrics (Dict): Normalized metrics
+            pattern (HistoricalPattern): Pattern to match against
+
+        Returns:
+            float: Match score in [0,1]
+        """
+        cache_key = f"pattern_{pattern.name}_{hash(str(metrics))}"
+        if cache_key in self._pattern_cache:
+            return self._pattern_cache[cache_key]
+
         total_weight = 0.0
         matched_weight = 0.0
         c_w = self.config.PROJECTION_WEIGHTS['current']
         p_w = self.config.PROJECTION_WEIGHTS['projected']
+
+        # Iterate through pattern preconditions
         for metric_key, (min_val, max_val) in pattern.preconditions.items():
             if metric_key not in metrics['values']:
                 logging.warning(f"Metric {metric_key} not found in metrics")
@@ -635,16 +779,25 @@ class PsychohistoryEngine:
             total_weight += weight
             current_value = metrics['values'][metric_key]
             projected_value = metrics['projected'][metric_key]
+            # Combine current and projected values for matching
             effective_value = current_value * c_w + projected_value * p_w
             if min_val <= effective_value <= max_val:
                 matched_weight += weight
             else:
+                # Partial match with exponential decay for distance
                 distance = min_val - effective_value if effective_value < min_val else effective_value - max_val
                 partial_match = np.exp(-distance * self.config.PARTIAL_MATCH_DECAY)
                 matched_weight += weight * partial_match
-        return matched_weight / total_weight if total_weight > 0 else 0.0
+
+        result = matched_weight / total_weight if total_weight > 0 else 0.0
+        self._pattern_cache[cache_key] = result
+        return result
 
     def _calculate_composite_risk(self, metrics: Dict, pattern_matches: List[Dict]) -> float:
+        """Calculate comprehensive risk score.
+
+        Combines base metric risk, pattern match risk, and trend momentum risk.
+        """
         critical_metrics = [
             'ECONOMIC_wealth_inequality', 'POLITICAL_institutional_trust',
             'SOCIAL_civic_engagement', 'ENVIRONMENTAL_climate_stress'
@@ -653,6 +806,7 @@ class PsychohistoryEngine:
         for metric in critical_metrics:
             if metric in metrics['values']:
                 value = metrics['values'][metric]
+                # Invert trust/engagement metrics for risk (low value = high risk)
                 risk = 1.0 - value if 'trust' in metric or 'engagement' in metric else value
                 metric_risks.append(risk)
         base_risk = np.mean(metric_risks) if metric_risks else 0.5
@@ -666,6 +820,7 @@ class PsychohistoryEngine:
         return min(1.0, composite)
 
     def _determine_risk_level(self, score: float) -> str:
+        """Convert risk score to categorical level."""
         thresholds = self.config.RISK_THRESHOLDS
         if score >= thresholds['CRITICAL']:
             return "CRITICAL"
@@ -678,6 +833,7 @@ class PsychohistoryEngine:
         return "STABLE"
 
     def _generate_recommendations(self, metrics: Dict, pattern_matches: List[Dict]) -> List[Dict]:
+        """Generate actionable recommendations based on patterns and metrics."""
         recommendations = []
         for pattern in pattern_matches:
             if pattern['severity'] > 0.7:
@@ -705,6 +861,7 @@ class PsychohistoryEngine:
         return recommendations
 
     def _get_recommendation_for_pattern(self, pattern_name: str) -> str:
+        """Map pattern names to specific recommendations."""
         recommendations = {
             "Economic Collapse": "Implement progressive taxation and social safety nets",
             "Political Instability": "Strengthen democratic institutions and public communication"
@@ -719,7 +876,7 @@ def main():
     engine = PsychohistoryEngine()
     metrics = CivilizationMetrics()
 
-    # Initialize realistic metrics
+    # Initialize realistic metrics (e.g., wealth inequality as Gini coefficient * 100)
     metrics.update_metric(MetricCategory.ECONOMIC, "wealth_inequality", 70, 0, 100)
     metrics.update_metric(MetricCategory.ECONOMIC, "economic_stability", 30, 0, 100)
     metrics.update_metric(MetricCategory.POLITICAL, "institutional_trust", 40, 0, 100)
@@ -740,11 +897,12 @@ def main():
     timeline = engine.predict_timeline("Earth2025", years=3)
     years = [p.year for p in timeline]
     risks = [p.risk_score for p in timeline]
-    plt.plot(years, risks, marker='o')
+    plt.plot(years, risks, marker='o', label='Risk Score')
     plt.title("Risk Score Over Time")
     plt.xlabel("Years")
     plt.ylabel("Risk Score")
     plt.grid(True)
+    plt.legend()
     plt.show()
 
     # Simulate intervention
@@ -787,6 +945,12 @@ class TestPsychohistoryEngine(unittest.TestCase):
         result = self.engine.simulate_intervention("TestCiv", intervention, years=2)
         self.assertTrue(0.0 <= result.projected_risk <= 1.0)
         self.assertTrue(0.0 <= result.success_probability <= 1.0)
+
+    def test_batch_analysis(self):
+        self.engine.add_civilization("TestCiv2", self.metrics.clone())
+        results = self.engine.analyze_multiple_civilizations(["TestCiv", "TestCiv2"])
+        self.assertEqual(len(results), 2)
+        self.assertTrue(all(isinstance(r, AnalysisResult) for r in results.values()))
 
 if __name__ == "__main__":
     main()
