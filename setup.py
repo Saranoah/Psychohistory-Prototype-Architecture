@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Real-Time Computational Psychohistory v2.0
+Real-Time Computational Psychohistory v2.0 
 Robust setup.py: safe defaults, dynamic version discovery, extras aggregated.
 """
 
